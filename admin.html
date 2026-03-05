@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - ADESEWA Bistro</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-storage.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #3E2723 0%, #5D4037 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .admin-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .logout-btn {
+            background: #FF9800;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #F57C00;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section h2 {
+            margin-top: 0;
+            color: #3E2723;
+            border-bottom: 3px solid #FF9800;
+            padding-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2C2C2C;
+            font-size: 0.95rem;
+        }
+
+        .form-group label .required {
+            color: #f44336;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #FF9800;
+            box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input.error,
+        .form-group textarea.error,
+        .form-group select.error {
+            border-color: #f44336;
+            box-shadow: 0 0 0 4px rgba(244, 67, 54, 0.1);
+        }
+
+        .error-text {
+            color: #f44336;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+
+        .image-upload-area {
+            border: 3px dashed #FF9800;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .image-upload-area:hover {
+            background: #fff3e0;
+            border-color: #F57C00;
+        }
+
+        .image-upload-area.dragover {
+            background: #fff3e0;
+            border-color: #F57C00;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .image-preview {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-preview p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-add, .btn-cancel, .btn-edit, .btn-delete {
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-add:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-cancel {
+            background: #999;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-cancel:hover {
+            background: #777;
+            transform: translateY(-2px);
+        }
+
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        .btn-edit:hover {
+            background: #0b7dda;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .items-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .items-list h2 {
+            background: linear-gradient(135deg, #3E2723 0%, #5D4037 100%);
+            color: white;
+            margin: 0;
+            padding: 1.5rem 2rem;
+            border-bottom: 3px solid #FF9800;
+            font-size: 1.3rem;
+        }
+
+        .item-card {
+            border-bottom: 1px solid #eee;
+            padding: 1.5rem 2rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 2rem;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .item-card:hover {
+            background: #f9f9f9;
+        }
+
+        .item-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .item-image-placeholder {
+            color: #999;
+            font-size: 2rem;
+        }
+
+        .item-info h3 {
+            margin: 0 0 0.5rem 0;
+            color: #3E2723;
+            font-size: 1.1rem;
+        }
+
+        .item-info p {
+            margin: 0.3rem 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .item-price {
+            color: #4CAF50;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .auth-container {
+            max-width: 400px;
+            margin: 5rem auto;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-container h2 {
+            color: #3E2723;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+            font-size: 1.05rem;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #FF9800;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-message {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 1rem;
+            }
+
+            .admin-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .admin-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .item-card {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .item-image {
+                width: 100%;
+                height: auto;
+            }
+
+            .item-actions {
+                width: 100%;
+                gap: 0.5rem;
+            }
+
+            .btn-edit, .btn-delete {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Loading state -->
+        <div id="loading" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading admin panel...</p>
+        </div>
+
+        <!-- Auth container (shown when not logged in) -->
+        <div id="auth-container" class="auth-container">
+            <h2>🔐 Admin Login</h2>
+            <div id="firebaseui-auth-container"></div>
+        </div>
+
+        <!-- Admin content (shown when logged in) -->
+        <div id="admin-content" style="display: none;">
+            <div class="admin-header">
+                <h1>🍽️ ADESEWA Bistro - Admin Panel</h1>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+
+            <!-- Messages -->
+            <div id="message-container"></div>
+
+            <!-- Add/Edit Menu Item Form -->
+            <div class="form-section">
+                <h2 id="form-title">➕ Add New Menu Item</h2>
+                <form id="menu-form" onsubmit="saveMenuItem(event)">
+                    <input type="hidden" id="itemId">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemName">Item Name <span class="required">*</span></label>
+                            <input type="text" id="itemName" placeholder="e.g., Akara Balls" required>
+                            <div class="error-text" id="nameError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="itemPrice">Price (₦) <span class="required">*</span></label>
+                            <input type="number" id="itemPrice" placeholder="e.g., 850" min="0" step="0.01" required>
+                            <div class="error-text" id="priceError"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemCategory">Category <span class="required">*</span></label>
+                            <select id="itemCategory" required>
+                                <option value="">-- Select Category --</option>
+                                <option value="Appetizers">Appetizers</option>
+                                <option value="Main Dishes">Main Dishes</option>
+                                <option value="Beverages">Beverages</option>
+                                <option value="Desserts">Desserts</option>
+                            </select>
+                            <div class="error-text" id="categoryError"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="itemDescription">Description <span class="required">*</span></label>
+                            <textarea id="itemDescription" placeholder="Describe this menu item..." required></textarea>
+                            <div class="error-text" id="descriptionError"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="itemImage">📸 Image Upload</label>
+                            <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('itemImage').click()">
+                                <div class="upload-icon">🖼️</div>
+                                <p><strong>Click to upload</strong> or drag image here</p>
+                                <p style="font-size: 0.85rem; color: #999;">JPG, PNG, WebP (Max 2MB)</p>
+                            </div>
+                            <input type="file" id="itemImage" style="display: none;" accept="image/*" onchange="previewImage(event)">
+                            <input type="hidden" id="imageUrl">
+                            <div class="image-preview" id="imagePreview"></div>
+                            <div class="error-text" id="imageError"></div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" class="btn-add" id="submitBtn">✓ Add Item</button>
+                        <button type="button" class="btn-cancel" onclick="resetForm()" id="cancelBtn" style="display: none;">✕ Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Menu Items List -->
+            <div class="items-list">
+                <h2>📋 Menu Items</h2>
+                <div id="items-container">
+                    <div class="empty-state">No items yet. Add your first menu item above!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="https://cdn.firebase.com/libs/firebaseui/6.0.0/firebaseui.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/6.0.0/firebaseui.css" />
+    
+    <script>
+        let editingId = null;
+        let uploadingImage = false;
+        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragAndDrop();
+            
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    document.getElementById('auth-container').style.display = 'none';
+                    document.getElementById('admin-content').style.display = 'block';
+                    loadMenuItems();
+                } else {
+                    document.getElementById('auth-container').style.display = 'block';
+                    document.getElementById('admin-content').style.display = 'none';
+                    initFirebaseUI();
+                }
+            });
+        });
+
+        // Setup drag and drop for image upload
+        function setupDragAndDrop() {
+            const uploadArea = document.getElementById('imageUploadArea');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => {
+                    uploadArea.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => {
+                    uploadArea.classList.remove('dragover');
+                });
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                document.getElementById('itemImage').files = files;
+                if (files.length > 0) {
+                    previewImage({ target: { files: files } });
+                }
+            });
+        }
+
+        // Preview image before upload
+        function previewImage(event) {
+            const file = event.target.files[0];
+            const previewDiv = document.getElementById('imagePreview');
+            const errorDiv = document.getElementById('imageError');
+
+            if (!file) {
+                previewDiv.innerHTML = '';
+                errorDiv.textContent = '';
+                return;
+            }
+
+            // Validate file
+            if (!file.type.startsWith('image/')) {
+                errorDiv.textContent = '❌ Please select a valid image file';
+                previewDiv.innerHTML = '';
+                return;
+            }
+
+            if (file.size > MAX_FILE_SIZE) {
+                errorDiv.textContent = '❌ Image must be smaller than 2MB';
+                previewDiv.innerHTML = '';
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewDiv.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <p>✓ Ready to upload: ${file.name}</p>
+                `;
+                errorDiv.textContent = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Validate form
+        function validateForm() {
+            clearErrorMessages();
+            let isValid = true;
+
+            const name = document.getElementById('itemName').value.trim();
+            const price = document.getElementById('itemPrice').value;
+            const category = document.getElementById('itemCategory').value;
+            const description = document.getElementById('itemDescription').value.trim();
+
+            if (!name) {
+                showFieldError('itemName', 'nameError', 'Item name is required');
+                isValid = false;
+            } else if (name.length < 3) {
+                showFieldError('itemName', 'nameError', 'Item name must be at least 3 characters');
+                isValid = false;
+            }
+
+            if (!price || price <= 0) {
+                showFieldError('itemPrice', 'priceError', 'Price must be greater than 0');
+                isValid = false;
+            }
+
+            if (!category) {
+                showFieldError('itemCategory', 'categoryError', 'Please select a category');
+                isValid = false;
+            }
+
+            if (!description) {
+                showFieldError('itemDescription', 'descriptionError', 'Description is required');
+                isValid = false;
+            } else if (description.length < 10) {
+                showFieldError('itemDescription', 'descriptionError', 'Description must be at least 10 characters');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function showFieldError(fieldId, errorId, message) {
+            document.getElementById(fieldId).classList.add('error');
+            document.getElementById(errorId).textContent = '❌ ' + message;
+        }
+
+        function clearErrorMessages() {
+            document.querySelectorAll('.form-group input, .form-group textarea, .form-group select').forEach(el => {
+                el.classList.remove('error');
+            });
+            document.querySelectorAll('.error-text').forEach(el => {
+                el.textContent = '';
+            });
+        }
+
+        // Upload image to Firebase Storage
+        async function uploadImage(file) {
+            if (!file) return null;
+
+            const fileName = `${Date.now()}_${file.name}`;
+            const storageRef = firebase.storage().ref('menu-items/' + fileName);
+
+            try {
+                uploadingImage = true;
+                showMessage('Uploading image...', 'info');
+                
+                const snapshot = await storageRef.put(file);
+                const downloadUrl = await snapshot.ref.getDownloadURL();
+                
+                uploadingImage = false;
+                return downloadUrl;
+            } catch (error) {
+                uploadingImage = false;
+                showMessage('Error uploading image: ' + error.message, 'error');
+                return null;
+            }
+        }
+
+        // Initialize FirebaseUI
+        function initFirebaseUI() {
+            const uiConfig = {
+                signInOptions: [
+                    firebase.auth.EmailAuthProvider.PROVIDER_ID,
+                    firebase.auth.GoogleAuthProvider.PROVIDER_ID
+                ],
+                signInFlow: 'popup',
+                callbacks: {
+                    signInSuccessWithAuthResult: function(result, redirectUrl) {
+                        document.getElementById('auth-container').style.display = 'none';
+                        document.getElementById('admin-content').style.display = 'block';
+                        loadMenuItems();
+                        return false;
+                    }
+                }
+            };
+
+            const ui = new firebaseui.auth.AuthUI(auth);
+            ui.start('#firebaseui-auth-container', uiConfig);
+        }
+
+        // Logout
+        function logout() {
+            auth.signOut().then(() => {
+                resetForm();
+                document.getElementById('auth-container').style.display = 'block';
+                document.getElementById('admin-content').style.display = 'none';
+                showMessage('Logged out successfully! 👋', 'success');
+            });
+        }
+
+        // Load menu items from Firestore
+        function loadMenuItems() {
+            const container = document.getElementById('items-container');
+            container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div>Loading items...</div>';
+
+            db.collection('menuItems').orderBy('name').onSnapshot(snapshot => {
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="empty-state">No items yet. Add your first menu item above!</div>';
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const imageHTML = item.image ? 
+                        `<img src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2224%22 fill=%22%23999%22%3E🍽️%3C/text%3E%3C/svg%3E'">` :
+                        '<div class="item-image-placeholder">🍽️</div>';
+                    
+                    html += `
+                        <div class="item-card">
+                            <div class="item-image">${imageHTML}</div>
+                            <div class="item-info">
+                                <h3>${escapeHtml(item.name)}</h3>
+                                <p><strong>Category:</strong> ${escapeHtml(item.category)}</p>
+                                <p class="item-price"><strong>₦${item.price.toLocaleString('en-NG')}</strong></p>
+                                <p>${escapeHtml(item.description)}</p>
+                            </div>
+                            <div class="item-actions">
+                                <button class="btn-edit" onclick="editItem('${doc.id}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">Edit</button>
+                                <button class="btn-delete" onclick="deleteItem('${doc.id}', '${escapeHtml(item.name)}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            }, error => {
+                container.innerHTML = '<div class="error-state"><p>Error loading items: ' + error.message + '</p></div>';
+            });
+        }
+
+        // Save menu item (add or update)
+        async function saveMenuItem(event) {
+            event.preventDefault();
+
+            if (!validateForm()) {
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+
+            const id = document.getElementById('itemId').value;
+            let imageUrl = document.getElementById('imageUrl').value;
+
+            // Upload new image if selected
+            const imageFile = document.getElementById('itemImage').files[0];
+            if (imageFile) {
+                imageUrl = await uploadImage(imageFile);
+                if (!imageUrl) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = id ? 'Update Item' : 'Add Item';
+                    return;
+                }
+            }
+
+            const itemData = {
+                name: document.getElementById('itemName').value.trim(),
+                category: document.getElementById('itemCategory').value,
+                description: document.getElementById('itemDescription').value.trim(),
+                price: parseFloat(document.getElementById('itemPrice').value),
+                image: imageUrl || null,
+                updatedAt: new Date()
+            };
+
+            if (id) {
+                // Update existing item
+                db.collection('menuItems').doc(id).update(itemData)
+                    .then(() => {
+                        showMessage('✅ Item updated successfully!', 'success');
+                        resetForm();
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Add Item';
+                    })
+                    .catch(err => {
+                        showMessage('❌ Error updating item: ' + err.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Update Item';
+                    });
+            } else {
+                // Add new item
+                itemData.createdAt = new Date();
+                db.collection('menuItems').add(itemData)
+                    .then(() => {
+                        showMessage('✅ Item added successfully!', 'success');
+                        resetForm();
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Add Item';
+                    })
+                    .catch(err => {
+                        showMessage('❌ Error adding item: ' + err.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Add Item';
+                    });
+            }
+        }
+
+        // Edit item
+        function editItem(id, item) {
+            editingId = id;
+            document.getElementById('itemId').value = id;
+            document.getElementById('itemName').value = item.name;
+            document.getElementById('itemCategory').value = item.category;
+            document.getElementById('itemDescription').value = item.description;
+            document.getElementById('itemPrice').value = item.price;
+            document.getElementById('imageUrl').value = item.image || '';
+
+            // Show image preview if exists
+            if (item.image) {
+                const previewDiv = document.getElementById('imagePreview');
+                previewDiv.innerHTML = `<img src="${item.image}" alt="Current"><p>✓ Current image</p>`;
+            }
+
+            document.getElementById('form-title').textContent = '✏️ Edit Menu Item';
+            document.getElementById('submitBtn').textContent = '💾 Update Item';
+            document.getElementById('cancelBtn').style.display = 'block';
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Reset form
+        function resetForm() {
+            editingId = null;
+            clearErrorMessages();
+            document.getElementById('menu-form').reset();
+            document.getElementById('itemId').value = '';
+            document.getElementById('imageUrl').value = '';
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('form-title').textContent = '➕ Add New Menu Item';
+            document.getElementById('submitBtn').textContent = '✓ Add Item';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        // Delete item
+        function deleteItem(id, name) {
+            if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+                db.collection('menuItems').doc(id).delete()
+                    .then(() => showMessage('✅ Item deleted successfully!', 'success'))
+                    .catch(err => showMessage('❌ Error deleting item: ' + err.message, 'error'));
+            }
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const container = document.getElementById('message-container');
+            const div = document.createElement('div');
+            div.className = `message ${type}-message`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️'
+            };
+            
+            div.innerHTML = `<span>${icons[type] || ''}</span><span>${message}</span>`;
+            container.appendChild(div);
+
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
